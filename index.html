@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHN Express - Hệ Thống Quản Lý Toàn Diện (Cloud Sync)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ghn: { orange: '#FA5400', dark: '#002D62', hover: '#D94800' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800">
+
+    <!-- THANH ĐIỀU HƯỚNG CHUYỂN TAB -->
+    <header class="bg-gray-900 text-white sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <span class="font-extrabold text-ghn-orange text-lg tracking-wider">GHN PORTAL</span>
+                <span class="text-xs text-green-400 font-semibold"><i class="fa-solid fa-cloud mr-1"></i>Cloud Online</span>
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="switchSystemTab('shop')" id="btn-tab-shop" class="px-4 py-1.5 rounded-lg font-bold text-sm bg-ghn-orange text-white shadow transition flex items-center space-x-2">
+                    <i class="fa-solid fa-store"></i><span>1. Cổng Chủ Shop</span>
+                </button>
+                <button onclick="switchSystemTab('admin')" id="btn-tab-admin" class="px-4 py-1.5 rounded-lg font-bold text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-user-shield"></i><span>2. Cổng Quản Trị Admin</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- TAB 1: CỔNG CHỦ SHOP -->
+    <div id="tab-content-shop" class="min-h-[calc(100vh-50px)] flex flex-col">
+        <!-- Auth Screen -->
+        <div id="auth-screen" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-40 p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+                <div class="bg-ghn-dark text-white p-6 text-center">
+                    <h1 class="text-3xl font-extrabold tracking-wider">GHN <span class="text-ghn-orange">EXPRESS</span></h1>
+                    <p class="text-sm text-gray-300 mt-1">Cổng dịch vụ giao hàng nhanh dành cho Shop</p>
+                </div>
+                <div class="p-6">
+                    <div class="flex border-b mb-6">
+                        <button onclick="switchAuthTab('login')" id="auth-tab-login" class="flex-1 pb-3 font-bold text-ghn-orange border-b-2 border-ghn-orange text-center">Đăng nhập</button>
+                        <button onclick="switchAuthTab('register')" id="auth-tab-register" class="flex-1 pb-3 font-bold text-gray-400 text-center">Đăng ký Shop mới</button>
+                    </div>
+
+                    <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Số điện thoại đăng nhập</label>
+                            <input type="text" id="login-phone" required class="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-ghn-orange outline-none" placeholder="VD: 0912345678">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Mật khẩu</label>
+                            <input type="password" id="login-pass" required class="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-ghn-orange outline-none" placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="w-full bg-ghn-orange text-white py-3 rounded-xl font-bold hover:bg-ghn-hover transition shadow-lg">ĐĂNG NHẬP NGAY</button>
+                    </form>
+
+                    <form id="form-register" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Tên Chủ Shop</label>
+                            <input type="text" id="reg-name" required class="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-ghn-orange outline-none" placeholder="VD: Shop Quần Áo XYZ">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Số điện thoại</label>
+                            <input type="tel" id="reg-phone" required class="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-ghn-orange outline-none" placeholder="0912345678">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Mật khẩu</label>
+                            <input type="password" id="reg-pass" required class="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-ghn-orange outline-none" placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="w-full bg-ghn-dark text-white py-3 rounded-xl font-bold hover:opacity-90 transition shadow-lg">ĐĂNG KÝ SHOP</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Shop -->
+        <div id="main-shop-dashboard" class="hidden flex-1 flex flex-col">
+            <header class="bg-ghn-dark text-white shadow">
+                <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-2xl font-black tracking-wider">GHN <span class="text-ghn-orange">EXPRESS</span></span>
+                        <span class="bg-ghn-orange text-xs px-2.5 py-1 rounded-full font-bold">SHOP PORTAL</span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span id="shop-username-display" class="text-sm font-semibold text-gray-200"></span>
+                        <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-xs px-3 py-2 rounded-lg font-bold transition shadow">Đăng xuất</button>
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+                <aside class="md:col-span-1 bg-white rounded-2xl shadow-sm p-4 space-y-2 h-fit border border-gray-100">
+                    <button onclick="switchShopSection('dashboard')" id="nav-dash" class="w-full text-left px-4 py-3 rounded-xl font-bold bg-orange-50 text-ghn-orange flex items-center space-x-3 transition"><i class="fa-solid fa-chart-pie w-5"></i><span>Tổng quan</span></button>
+                    <button onclick="switchShopSection('create')" id="nav-create" class="w-full text-left px-4 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-50 flex items-center space-x-3 transition"><i class="fa-solid fa-plus-circle w-5"></i><span>Tạo đơn hàng</span></button>
+                    <button onclick="switchShopSection('orders')" id="nav-orders" class="w-full text-left px-4 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-50 flex items-center space-x-3 transition"><i class="fa-solid fa-boxes-stacked w-5"></i><span>Quản lý đơn hàng</span></button>
+                    <button onclick="switchShopSection('wallet')" id="nav-wallet" class="w-full text-left px-4 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-50 flex items-center space-x-3 transition"><i class="fa-solid fa-wallet w-5"></i><span>Ví COD & Đối soát</span></button>
+                </aside>
+
+                <section class="md:col-span-3 space-y-6">
+                    <!-- Dashboard Sec -->
+                    <div id="shop-sec-dashboard" class="space-y-6">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-yellow-500"><p class="text-xs text-gray-500 font-semibold">Chờ lấy hàng</p><h3 id="stat-shop-pending" class="text-2xl font-black mt-1">0</h3></div>
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-blue-500"><p class="text-xs text-gray-500 font-semibold">Đang giao</p><h3 id="stat-shop-shipping" class="text-2xl font-black mt-1">0</h3></div>
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-green-500"><p class="text-xs text-gray-500 font-semibold">Thành công</p><h3 id="stat-shop-success" class="text-2xl font-black mt-1">0</h3></div>
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-ghn-orange"><p class="text-xs text-gray-500 font-semibold">Tiền COD</p><h3 id="stat-shop-cod" class="text-xl font-black mt-1 text-ghn-orange">0 đ</h3></div>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                            <h3 class="font-bold text-lg mb-4 text-ghn-dark">Đơn hàng mới tạo gần đây</h3>
+                            <div id="shop-recent-list" class="space-y-3"></div>
+                        </div>
+                    </div>
+
+                    <!-- Create Sec -->
+                    <div id="shop-sec-create" class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 hidden space-y-6">
+                        <h2 class="text-xl font-bold text-ghn-dark border-b pb-3"><i class="fa-solid fa-file-invoice text-ghn-orange mr-2"></i> Tạo Đơn Giao Hàng Nhanh</h2>
+                        <form onsubmit="handleCreateOrder(event)" class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div><label class="block text-sm font-semibold mb-1">Tên Người Nhận</label><input type="text" id="rec-name" required class="w-full px-4 py-2.5 border rounded-xl outline-none" placeholder="Nguyễn Văn A"></div>
+                                <div><label class="block text-sm font-semibold mb-1">Số Điện Thoại Người Nhận</label><input type="tel" id="rec-phone" required class="w-full px-4 py-2.5 border rounded-xl outline-none" placeholder="0987654321"></div>
+                            </div>
+                            <div><label class="block text-sm font-semibold mb-1">Địa Chỉ Nhận Hàng Chi Tiết</label><input type="text" id="rec-address" required class="w-full px-4 py-2.5 border rounded-xl outline-none" placeholder="Số 10 Đại Cồ Việt"></div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div><label class="block text-sm font-semibold mb-1">Tỉnh / Thành Phố</label><select id="rec-city" class="w-full px-4 py-2.5 border rounded-xl outline-none bg-white font-medium"><option value="Hà Nội">Hà Nội</option><option value="Hồ Chí Minh">Hồ Chí Minh</option><option value="Đà Nẵng">Đà Nẵng</option></select></div>
+                                <div><label class="block text-sm font-semibold mb-1">Trọng Lượng (Gram)</label><input type="number" id="order-weight" value="500" min="50" required class="w-full px-4 py-2.5 border rounded-xl outline-none"></div>
+                                <div><label class="block text-sm font-semibold mb-1">Tiền Thu Hộ COD (VNĐ)</label><input type="number" id="order-cod" value="0" min="0" required class="w-full px-4 py-2.5 border rounded-xl outline-none"></div>
+                            </div>
+                            <div class="pt-4 flex justify-end">
+                                <button type="submit" id="btn-submit-order" class="bg-ghn-orange text-white px-8 py-3 rounded-xl font-bold hover:bg-ghn-hover transition shadow-lg">XÁC NHẬN TẠO ĐƠN (ĐẨY LÊN CLOUD)</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Orders List Sec -->
+                    <div id="shop-sec-orders" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hidden space-y-4">
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                            <h2 class="text-xl font-bold text-ghn-dark">Danh Sách Vận Đơn Của Shop</h2>
+                            <input type="text" id="shop-search-input" oninput="refreshShopData()" placeholder="Tìm mã vận đơn, SĐT..." class="px-4 py-2 border rounded-xl text-sm outline-none w-full md:w-64">
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b text-xs text-gray-500 uppercase">
+                                        <th class="p-3">Mã Vận Đơn</th>
+                                        <th class="p-3">Người Nhận</th>
+                                        <th class="p-3">Địa Chỉ</th>
+                                        <th class="p-3">COD</th>
+                                        <th class="p-3">Trạng Thái & Ngày Cập Nhật</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="shop-orders-tbody" class="text-sm divide-y"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Wallet Sec -->
+                    <div id="shop-sec-wallet" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hidden space-y-6">
+                        <h2 class="text-xl font-bold text-ghn-dark">Ví Đối Soát Tiền COD</h2>
+                        <div class="bg-gradient-to-r from-ghn-dark to-blue-900 text-white p-6 rounded-2xl flex justify-between items-center shadow">
+                            <div><p class="text-sm text-gray-300">Số dư khả dụng</p><h2 id="shop-wallet-balance" class="text-3xl font-extrabold mt-1 text-ghn-orange">0 đ</h2></div>
+                            <button onclick="alert('Đã gửi yêu cầu rút tiền!')" class="bg-ghn-orange text-white px-6 py-2.5 rounded-xl font-bold shadow">Rút Tiền</button>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+
+    <!-- TAB 2: CỔNG QUẢN TRỊ ADMIN (CÓ CHỈNH THỜI GIAN) -->
+    <div id="tab-content-admin" class="min-h-[calc(100vh-50px)] flex flex-col hidden bg-gray-100">
+        <header class="bg-ghn-dark text-white shadow">
+            <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <span class="text-2xl font-black tracking-wider">GHN <span class="text-ghn-orange">ADMIN</span></span>
+                    <span class="bg-red-600 text-xs px-2.5 py-1 rounded-full font-bold">HỆ THỐNG QUẢN TRỊ TỔNG CLOUD</span>
+                </div>
+                <button onclick="fetchCloudOrders()" class="bg-gray-700 hover:bg-gray-600 text-xs px-3 py-2 rounded-lg font-bold transition"><i class="fa-solid fa-rotate mr-1"></i> Tải lại Cloud</button>
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-ghn-orange"><p class="text-xs text-gray-500 font-semibold">Tổng Vận Đơn Đám Mây</p><h3 id="admin-stat-total" class="text-2xl font-black mt-1">0</h3></div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-yellow-500"><p class="text-xs text-gray-500 font-semibold">Chờ Lấy Hàng</p><h3 id="admin-stat-pending" class="text-2xl font-black mt-1">0</h3></div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-blue-500"><p class="text-xs text-gray-500 font-semibold">Đang Giao Hàng</p><h3 id="admin-stat-shipping" class="text-2xl font-black mt-1">0</h3></div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-green-500"><p class="text-xs text-gray-500 font-semibold">Giao Thành Công</p><h3 id="admin-stat-success" class="text-2xl font-black mt-1">0</h3></div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <h2 class="text-xl font-bold text-ghn-dark">Quản Lý & Chỉnh Sửa Trạng Thái / Vị Trí / Thời Gian</h2>
+                    <input type="text" id="admin-search-input" oninput="loadAdminData()" placeholder="Tìm mã vận đơn..." class="px-4 py-2 border rounded-xl text-sm outline-none w-full md:w-64">
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 border-b text-xs text-gray-500 uppercase">
+                                <th class="p-3">Mã Vận Đơn</th>
+                                <th class="p-3">Shop Gửi</th>
+                                <th class="p-3">Người Nhận & Địa Chỉ</th>
+                                <th class="p-3">Thời Gian Cập Nhật</th>
+                                <th class="p-3">Trạng Thái & Vị Trí</th>
+                                <th class="p-3 text-center">Hành Động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-orders-tbody" class="text-sm divide-y"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+
+    <!-- MODAL CẬP NHẬT TRẠNG THÁI & CHỈNH SỬA THỜI GIAN -->
+    <div id="admin-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-lg text-ghn-dark">Cập Nhật Trạng Thái, Vị Trí & Thời Gian</h3>
+                <button onclick="closeAdminModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+            </div>
+            
+            <input type="hidden" id="modal-order-id">
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Trạng Thái Đơn Hàng</label>
+                    <select id="modal-status" class="w-full px-4 py-2.5 border rounded-xl outline-none font-medium bg-white">
+                        <option value="Chờ lấy hàng">Chờ lấy hàng</option>
+                        <option value="Đang giao">Đang giao</option>
+                        <option value="Giao thành công">Giao thành công</option>
+                        <option value="Hoàn trả">Hoàn trả</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Vị Trí / Lịch Sử Hành Trình</label>
+                    <input type="text" id="modal-location" placeholder="VD: Đã đến Kho SOC Hà Nội..." class="w-full px-4 py-2.5 border rounded-xl outline-none font-medium">
+                </div>
+
+                <!-- TÍNH NĂNG MỚI: TÙY CHỈNH THỜI GIAN -->
+                <div>
+                    <label class="block text-sm font-semibold mb-1"><i class="fa-regular fa-clock text-ghn-orange mr-1"></i> Tùy Chỉnh Thời Gian Cập Nhật</label>
+                    <input type="text" id="modal-timestamp" placeholder="VD: 14:30 - 15/10/2026" class="w-full px-4 py-2.5 border rounded-xl outline-none font-medium">
+                    <p class="text-xs text-gray-400 mt-1">Bạn có thể sửa lại ngày giờ hiển thị trên hành trình tùy ý.</p>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-3 border-t">
+                <button onclick="closeAdminModal()" class="px-5 py-2.5 rounded-xl font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition">Hủy</button>
+                <button onclick="saveOrderStatusLocation()" id="btn-save-modal" class="px-6 py-2.5 rounded-xl font-bold bg-ghn-orange text-white hover:bg-ghn-hover transition shadow">Lưu Cập Nhật Đám Mây</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- JAVASCRIPT CONNECT CLOUD DATABASE (JSONBin API) -->
+    <script>
+        // Cấu hình Database Cloud công khai miễn phí
+        const CLOUD_BIN_ID = '670c399ee410153d7f573f8a'; // Demo Bin ID
+        const CLOUD_API_URL = 'https://api.jsonbin.io/v3/b/670c399ee410153d7f573f8a';
+        
+        let allOrdersData = [];
+        let currentShopUser = JSON.parse(localStorage.getItem('ghn_current_shop')) || null;
+
+        // Tải dữ liệu từ Đám mây về khi mở trang
+        async function fetchCloudOrders() {
+            try {
+                const res = await fetch(CLOUD_API_URL + '/latest', {
+                    headers: { 'X-Bin-Meta': 'false' }
+                });
+                if(res.ok) {
+                    const data = await res.json();
+                    allOrdersData = Array.isArray(data) ? data : [];
+                    localStorage.setItem('ghn_orders_cache', JSON.stringify(allOrdersData));
+                    refreshShopData();
+                    loadAdminData();
+                }
+            } catch (err) {
+                console.log('Lỗi tải đám mây, dùng cache cục bộ:', err);
+                allOrdersData = JSON.parse(localStorage.getItem('ghn_orders_cache')) || [];
+                refreshShopData();
+                loadAdminData();
+            }
+        }
+
+        // Đồng bộ dữ liệu mới lên Đám Mây
+        async function saveOrdersToCloud() {
+            try {
+                await fetch(CLOUD_API_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(allOrdersData)
+                });
+                localStorage.setItem('ghn_orders_cache', JSON.stringify(allOrdersData));
+            } catch (err) {
+                alert('Có lỗi đồng bộ đám mây! Đã lưu bản sao tạm thời.');
+            }
+        }
+
+        function switchSystemTab(tabName) {
+            if (tabName === 'shop') {
+                document.getElementById('tab-content-shop').classList.remove('hidden');
+                document.getElementById('tab-content-admin').classList.add('hidden');
+                document.getElementById('btn-tab-shop').className = "px-4 py-1.5 rounded-lg font-bold text-sm bg-ghn-orange text-white shadow flex items-center space-x-2";
+                document.getElementById('btn-tab-admin').className = "px-4 py-1.5 rounded-lg font-bold text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 flex items-center space-x-2";
+                initShopApp();
+            } else {
+                document.getElementById('tab-content-admin').classList.remove('hidden');
+                document.getElementById('tab-content-shop').classList.add('hidden');
+                document.getElementById('btn-tab-admin').className = "px-4 py-1.5 rounded-lg font-bold text-sm bg-ghn-orange text-white shadow flex items-center space-x-2";
+                document.getElementById('btn-tab-shop').className = "px-4 py-1.5 rounded-lg font-bold text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 flex items-center space-x-2";
+                loadAdminData();
+            }
+        }
+
+        // AUTH LOGIC
+        function switchAuthTab(type) {
+            if (type === 'login') {
+                document.getElementById('form-login').classList.remove('hidden');
+                document.getElementById('form-register').classList.add('hidden');
+                document.getElementById('auth-tab-login').className = "flex-1 pb-3 font-bold text-ghn-orange border-b-2 border-ghn-orange text-center";
+                document.getElementById('auth-tab-register').className = "flex-1 pb-3 font-bold text-gray-400 text-center";
+            } else {
+                document.getElementById('form-login').classList.add('hidden');
+                document.getElementById('form-register').classList.remove('hidden');
+                document.getElementById('auth-tab-register').className = "flex-1 pb-3 font-bold text-ghn-orange border-b-2 border-ghn-orange text-center";
+                document.getElementById('auth-tab-login').className = "flex-1 pb-3 font-bold text-gray-400 text-center";
+            }
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value;
+            const phone = document.getElementById('reg-phone').value;
+            const pass = document.getElementById('reg-pass').value;
+
+            let shops = JSON.parse(localStorage.getItem('ghn_registered_shops')) || [];
+            if(shops.some(s => s.phone === phone)) { alert('SĐT này đã được đăng ký!'); return; }
+            shops.push({ name, phone, pass });
+            localStorage.setItem('ghn_registered_shops', JSON.stringify(shops));
+            alert('Đăng ký thành công!');
+            switchAuthTab('login');
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const phone = document.getElementById('login-phone').value;
+            const pass = document.getElementById('login-pass').value;
+
+            let shops = JSON.parse(localStorage.getItem('ghn_registered_shops')) || [];
+            const found = shops.find(s => s.phone === phone && s.pass === pass);
+            if (found) {
+                currentShopUser = found;
+                localStorage.setItem('ghn_current_shop', JSON.stringify(currentShopUser));
+                initShopApp();
+            } else {
+                alert('Sai tài khoản hoặc mật khẩu!');
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('ghn_current_shop');
+            currentShopUser = null;
+            initShopApp();
+        }
+
+        function initShopApp() {
+            if (currentShopUser) {
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('main-shop-dashboard').classList.remove('hidden');
+                document.getElementById('shop-username-display').innerText = `Shop: ${currentShopUser.name}`;
+                refreshShopData();
+            } else {
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('main-shop-dashboard').classList.add('hidden');
+            }
+        }
+
+        function switchShopSection(sec) {
+            ['dashboard', 'create', 'orders', 'wallet'].forEach(s => document.getElementById(`shop-sec-${s}`).classList.add('hidden'));
+            document.getElementById(`shop-sec-${sec}`).classList.remove('hidden');
+            refreshShopData();
+        }
+
+        async function handleCreateOrder(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit-order');
+            btn.innerText = 'Đang đồng bộ Cloud...';
+            btn.disabled = true;
+
+            const now = new Date();
+            const timeFormatted = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')} - ${now.getDate().toString().padStart(2, '0')}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+
+            const newOrder = {
+                id: 'GHN' + Math.floor(100000 + Math.random() * 900000),
+                shopPhone: currentShopUser.phone,
+                shopName: currentShopUser.name,
+                receiverName: document.getElementById('rec-name').value,
+                receiverPhone: document.getElementById('rec-phone').value,
+                receiverAddress: document.getElementById('rec-address').value,
+                city: document.getElementById('rec-city').value,
+                weight: document.getElementById('order-weight').value,
+                cod: Number(document.getElementById('order-cod').value),
+                status: 'Chờ lấy hàng',
+                location: 'Đã tạo đơn hàng thành công, chờ bưu tá qua lấy',
+                timestamp: timeFormatted
+            };
+
+            allOrdersData.unshift(newOrder);
+            await saveOrdersToCloud();
+
+            btn.innerText = 'XÁC NHẬN TẠO ĐƠN (ĐẨY LÊN CLOUD)';
+            btn.disabled = false;
+            alert(`Tạo đơn hàng thành công! Mã vận đơn công khai: ${newOrder.id}`);
+            e.target.reset();
+            switchShopSection('orders');
+        }
+
+        function refreshShopData() {
+            let orders = currentShopUser ? allOrdersData.filter(o => o.shopPhone === currentShopUser.phone) : [];
+
+            document.getElementById('stat-shop-pending').innerText = orders.filter(o => o.status === 'Chờ lấy hàng').length;
+            document.getElementById('stat-shop-shipping').innerText = orders.filter(o => o.status === 'Đang giao').length;
+            document.getElementById('stat-shop-success').innerText = orders.filter(o => o.status === 'Giao thành công').length;
+            const totalCod = orders.filter(o => o.status === 'Giao thành công').reduce((a, c) => a + c.cod, 0);
+            document.getElementById('stat-shop-cod').innerText = totalCod.toLocaleString() + ' đ';
+            document.getElementById('shop-wallet-balance').innerText = totalCod.toLocaleString() + ' đ';
+
+            document.getElementById('shop-recent-list').innerHTML = orders.slice(0, 5).map(o => `
+                <div class="flex justify-between items-center p-3.5 bg-gray-50 rounded-xl text-sm">
+                    <div><b>${o.id}</b> - ${o.receiverName}<br><span class="text-xs text-gray-500"><i class="fa-regular fa-clock mr-1"></i>${o.timestamp || ''}</span></div>
+                    <span class="px-3 py-1 text-xs rounded-full font-bold ${getStatusBadgeClass(o.status)}">${o.status}</span>
+                </div>
+            `).join('') || '<p class="text-gray-400 text-sm py-2">Chưa có đơn hàng.</p>';
+
+            const kw = document.getElementById('shop-search-input')?.value.toLowerCase() || '';
+            if(kw) orders = orders.filter(o => o.id.toLowerCase().includes(kw) || o.receiverName.toLowerCase().includes(kw));
+
+            document.getElementById('shop-orders-tbody').innerHTML = orders.map(o => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="p-3 font-bold text-ghn-orange">${o.id}</td>
+                    <td class="p-3">${o.receiverName}<br><span class="text-xs text-gray-400">${o.receiverPhone}</span></td>
+                    <td class="p-3 text-xs">${o.receiverAddress}, ${o.city}</td>
+                    <td class="p-3 font-bold">${o.cod.toLocaleString()} đ</td>
+                    <td class="p-3">
+                        <span class="px-3 py-1 text-xs rounded-full font-bold inline-block mb-1 ${getStatusBadgeClass(o.status)}">${o.status}</span>
+                        <p class="text-xs text-gray-500"><i class="fa-regular fa-clock text-ghn-orange mr-1"></i>${o.timestamp || ''}</p>
+                    </td>
+                </tr>
+            `).join('') || `<tr><td colspan="5" class="p-4 text-center text-gray-400">Chưa có đơn hàng</td></tr>`;
+        }
+
+        // ADMIN LOGIC
+        function loadAdminData() {
+            document.getElementById('admin-stat-total').innerText = allOrdersData.length;
+            document.getElementById('admin-stat-pending').innerText = allOrdersData.filter(o => o.status === 'Chờ lấy hàng').length;
+            document.getElementById('admin-stat-shipping').innerText = allOrdersData.filter(o => o.status === 'Đang giao').length;
+            document.getElementById('admin-stat-success').innerText = allOrdersData.filter(o => o.status === 'Giao thành công').length;
+
+            const kw = document.getElementById('admin-search-input')?.value.toLowerCase() || '';
+            let filtered = allOrdersData;
+            if(kw) filtered = allOrdersData.filter(o => o.id.toLowerCase().includes(kw) || o.shopName.toLowerCase().includes(kw));
+
+            document.getElementById('admin-orders-tbody').innerHTML = filtered.map(o => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="p-3 font-bold text-ghn-orange">${o.id}</td>
+                    <td class="p-3 font-semibold text-ghn-dark">${o.shopName}</td>
+                    <td class="p-3 text-xs"><b>${o.receiverName}</b> (${o.receiverPhone})<br>${o.receiverAddress}</td>
+                    <td class="p-3 text-xs font-semibold text-gray-600">${o.timestamp || 'Chưa rõ'}</td>
+                    <td class="p-3">
+                        <span class="px-3 py-1 text-xs rounded-full font-bold inline-block mb-1 ${getStatusBadgeClass(o.status)}">${o.status}</span>
+                        <p class="text-xs text-gray-600"><i class="fa-solid fa-location-dot text-ghn-orange mr-1"></i>${o.location || 'Chưa có'}</p>
+                    </td>
+                    <td class="p-3 text-center">
+                        <button onclick="openAdminModal('${o.id}')" class="bg-ghn-orange hover:bg-ghn-hover text-white text-xs px-3.5 py-2 rounded-xl font-bold shadow"><i class="fa-solid fa-pen-to-square mr-1"></i> Sửa Lịch Sử</button>
+                    </td>
+                </tr>
+            `).join('') || `<tr><td colspan="6" class="p-4 text-center text-gray-400">Chưa có đơn hàng trên đám mây</td></tr>`;
+        }
+
+        function openAdminModal(orderId) {
+            const order = allOrdersData.find(o => o.id === orderId);
+            if(order) {
+                document.getElementById('modal-order-id').value = order.id;
+                document.getElementById('modal-status').value = order.status || 'Chờ lấy hàng';
+                document.getElementById('modal-location').value = order.location || '';
+                document.getElementById('modal-timestamp').value = order.timestamp || '';
+                document.getElementById('admin-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeAdminModal() {
+            document.getElementById('admin-modal').classList.add('hidden');
+        }
+
+        async function saveOrderStatusLocation() {
+            const btn = document.getElementById('btn-save-modal');
+            btn.innerText = 'Đang lưu Cloud...';
+            btn.disabled = true;
+
+            const orderId = document.getElementById('modal-order-id').value;
+            const index = allOrdersData.findIndex(o => o.id === orderId);
+            if(index !== -1) {
+                allOrdersData[index].status = document.getElementById('modal-status').value;
+                allOrdersData[index].location = document.getElementById('modal-location').value;
+                allOrdersData[index].timestamp = document.getElementById('modal-timestamp').value;
+                
+                await saveOrdersToCloud();
+                closeAdminModal();
+                loadAdminData();
+            }
+            btn.innerText = 'Lưu Cập Nhật Đám Mây';
+            btn.disabled = false;
+        }
+
+        function getStatusBadgeClass(status) {
+            switch(status) {
+                case 'Chờ lấy hàng': return 'bg-yellow-100 text-yellow-800';
+                case 'Đang giao': return 'bg-blue-100 text-blue-800';
+                case 'Giao thành công': return 'bg-green-100 text-green-800';
+                case 'Hoàn trả': return 'bg-red-100 text-red-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        window.onload = () => {
+            fetchCloudOrders();
+            initShopApp();
+        };
+    </script>
+</body>
+</html>
